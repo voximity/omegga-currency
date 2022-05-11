@@ -1,0 +1,9 @@
+{
+  "name": "currency",
+  "description": "A typed safe Omegga plugin.",
+  "author": "voximity",
+  "config": {
+    "decimalPlaces": {}
+  },
+  "commands": []
+}
