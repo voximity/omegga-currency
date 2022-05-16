@@ -3,7 +3,21 @@
   "description": "A typed safe Omegga plugin.",
   "author": "voximity",
   "config": {
-    "decimalPlaces": {}
+    "decimalPlaces": {
+      "description": "The number of decimal places for the currency to support.",
+      "type": "number",
+      "default": 0
+    },
+    "prefix": {
+      "description": "The prefix for currency.",
+      "type": "string",
+      "default": "$"
+    },
+    "baseCurrency": {
+      "description": "The starting amount of currency for new players.",
+      "type": "number",
+      "default": 0
+    }
   },
   "commands": []
 }
