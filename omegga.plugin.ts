@@ -1,4 +1,4 @@
-import OmeggaPlugin, { OL, PS, PC } from 'omegga';
+import OmeggaPlugin, { OL, PS, PC } from "omegga";
 
 type PlayerId = { id: string };
 type User = { currency: number };
@@ -46,18 +46,18 @@ export default class Plugin implements OmeggaPlugin<Config, Storage> {
   }
 
   async getData({ id }: PlayerId): Promise<User> {
-    return (await this.store.get('cur_' + id)) ?? this.defaultUser();
+    return (await this.store.get("cur_" + id)) ?? this.defaultUser();
   }
 
   async setData({ id }: PlayerId, data: User) {
-    if ('currency' in data) data.currency = this.roundCurrency(data.currency);
-    await this.store.set('cur_' + id, data);
+    if ("currency" in data) data.currency = this.roundCurrency(data.currency);
+    await this.store.set("cur_" + id, data);
   }
 
   async updateData({ id }: PlayerId, data: Partial<User>) {
-    if ('currency' in data) data.currency = this.roundCurrency(data.currency);
-    const baseData = (await this.store.get('cur_' + id)) ?? this.defaultUser();
-    await this.store.set('cur_' + id, { ...baseData, ...data });
+    if ("currency" in data) data.currency = this.roundCurrency(data.currency);
+    const baseData = (await this.store.get("cur_" + id)) ?? this.defaultUser();
+    await this.store.set("cur_" + id, { ...baseData, ...data });
   }
 
   async getCurrency(pid: PlayerId): Promise<string> {
@@ -66,7 +66,7 @@ export default class Plugin implements OmeggaPlugin<Config, Storage> {
   }
 
   async init() {
-    this.omegga.on('cmd:currency', async (speaker: string) => {
+    this.omegga.on("cmd:currency", async (speaker: string) => {
       this.omegga.whisper(
         speaker,
         `You currently have <color="ff0">${await this.getCurrency(
@@ -75,7 +75,7 @@ export default class Plugin implements OmeggaPlugin<Config, Storage> {
       );
     });
 
-    return { registeredCommands: ['currency'] };
+    return { registeredCommands: ["currency"] };
   }
 
   async pluginEvent(event: string, from: string, args: any[]) {
@@ -84,70 +84,78 @@ export default class Plugin implements OmeggaPlugin<Config, Storage> {
       console.log(`Plugin "${from}" is interacting with the currency plugin`);
     }
 
-    if (event === 'get') {
+    if (event === "get") {
       return await this.getData({ id: args[0] });
-    } else if (event === 'currency') {
+    } else if (event === "currency") {
       return await this.getCurrency({ id: args[0] });
-    } else if (event.startsWith('get.')) {
+    } else if (event.startsWith("get.")) {
       const data = await this.getData({ id: args[0] });
       const [nested, field] = this.navigatePath(
         data,
-        event.substring(4).split('.')
+        event.substring(4).split(".")
       );
       return nested[field];
-    } else if (event === 'update') {
+    } else if (event === "update") {
       await this.updateData({ id: args[0] }, args[1]);
-    } else if (event.startsWith('set.')) {
+    } else if (event.startsWith("set.")) {
       const data = await this.getData({ id: args[0] });
       const [nested, field] = this.navigatePath(
         data,
-        event.substring(4).split('.')
+        event.substring(4).split(".")
       );
       nested[field] = args[1];
       await this.updateData({ id: args[0] }, data);
-    } else if (event.startsWith('add.')) {
+    } else if (event.startsWith("add.")) {
       const data = await this.getData({ id: args[0] });
       const [nested, field] = this.navigatePath(
         data,
-        event.substring(4).split('.')
+        event.substring(4).split(".")
       );
-      if (nested[field] == null || typeof nested[field] === 'number') {
-        if (typeof args[1] !== 'number')
-          return { error: 'Must add a number to a number field' };
+      if (nested[field] == null || typeof nested[field] === "number") {
+        if (typeof args[1] !== "number")
+          return { error: "Must add a number to a number field" };
         nested[field] = (nested[field] ?? 0) + args[1];
       } else {
-        return { error: 'Cannot add to a field that is not a number' };
+        return { error: "Cannot add to a field that is not a number" };
       }
       await this.updateData({ id: args[0] }, data);
-    } else if (event.startsWith('push.')) {
+      return nested[field];
+    } else if (event.startsWith("push.")) {
       const data = await this.getData({ id: args[0] });
       const [nested, field] = this.navigatePath(
         data,
-        event.substring(5).split('.')
+        event.substring(5).split(".")
       );
       if (nested[field] == null || Array.isArray(nested[field])) {
         (nested[field] ??= []).push(args[1]);
       } else {
-        return { error: 'Cannot add to a field that is not a number' };
+        return { error: "Cannot add to a field that is not a number" };
       }
       await this.updateData({ id: args[0] }, data);
-    } else if (event.startsWith('delete.')) {
+      return nested[field];
+    } else if (event.startsWith("delete.")) {
       const data = await this.getData({ id: args[0] });
       const [nested, field] = this.navigatePath(
         data,
-        event.substring(5).split('.')
+        event.substring(5).split(".")
       );
       if (nested === data && field in this.defaultUser()) {
-        return { error: 'Cannot delete a base field' };
+        return { error: "Cannot delete a base field" };
       }
+      const val = nested[field];
       delete nested[field];
       await this.setData({ id: args[0] }, data);
-    } else if (event.startsWith('format')) {
-      if (typeof args[0] !== 'number')
-        return { error: 'Argument to `format` must be a number' };
+      return val;
+    } else if (event.startsWith("format")) {
+      if (typeof args[0] !== "number")
+        return { error: "Argument to `format` must be a number" };
       return this.formatCurrency(Number(args[0]));
+    } else if (event.startsWith("round")) {
+      if (typeof args[0] !== "number")
+        return { error: "Argument to `round` must be a number" };
+      return this.roundCurrency(Number(args[0]));
     } else {
-      return { error: 'Invalid event ' + event };
+      return { error: "Invalid event " + event };
     }
   }
 
